@@ -1,0 +1,13 @@
+@RunWith(AndroidJUnit4::class)
+class LoginUiTest {
+    @get:Rule
+    val rule = ActivityScenarioRule(LoginActivity::class.java)
+
+    @Test
+    fun successfulLogin_showsWelcome() {
+        LoginRobot.enterUsername("admin")
+        LoginRobot.enterPassword("admin")
+        LoginRobot.clickLogin()
+        LoginRobot.assertWelcomeVisible()
+    }
+}

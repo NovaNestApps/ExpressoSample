@@ -1,0 +1,14 @@
+object LoginRobot {
+    fun enterUsername(username: String) {
+        onView(withId(R.id.etUsername)).perform(typeText(username), closeSoftKeyboard())
+    }
+    fun enterPassword(password: String) {
+        onView(withId(R.id.etPassword)).perform(typeText(password), closeSoftKeyboard())
+    }
+    fun clickLogin() {
+        onView(withId(R.id.btnLogin)).perform(click())
+    }
+    fun assertWelcomeVisible() {
+        isDisplayed(R.id.tvWelcome)
+    }
+}
