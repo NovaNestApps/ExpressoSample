@@ -18,4 +18,15 @@ fun withText(expectedText: String): Matcher<View> = object : BoundedMatcher<View
         return item.text.toString() == expectedText
     }
 }
-// Stub for withText matcher
+/**
+ * Matches a TextView whose text matches the given Regex.
+ */
+fun withTextPattern(regex: Regex): Matcher<View> =
+    object : BoundedMatcher<View, TextView>(TextView::class.java) {
+        override fun describeTo(description: Description) {
+            description.appendText("TextView with text matching regex: $regex")
+        }
+        override fun matchesSafely(item: TextView): Boolean {
+            return regex.matches(item.text)
+        }
+    }
