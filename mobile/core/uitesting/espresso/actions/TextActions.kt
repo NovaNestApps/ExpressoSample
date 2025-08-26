@@ -37,4 +37,19 @@ object TextActions {
      * Simulates pressing the back button.
      */
     fun pressBack(): ViewAction = ViewActions.pressBack()
+
+// matcher/viewprops/WithTransformation.kt
+fun withPasswordTransformation(): Matcher<View> =
+    object : TypeSafeMatcher<View>() {
+        override fun describeTo(d: Description) = d.appendText("with PasswordTransformationMethod")
+        override fun matchesSafely(v: View) =
+            (v as? TextView)?.transformationMethod is android.text.method.PasswordTransformationMethod
+    }
+
+fun withoutTransformationMethod(): Matcher<View> =
+    object : TypeSafeMatcher<View>() {
+        override fun describeTo(d: Description) = d.appendText("without transformation method")
+        override fun matchesSafely(v: View) =
+            (v as? TextView)?.transformationMethod == null
+    }
 }
