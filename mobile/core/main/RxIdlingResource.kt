@@ -1,13 +1,12 @@
 import androidx.test.espresso.IdlingResource
-import androidx.test.espresso.IdlingRegistry
 import io.reactivex.plugins.RxJavaPlugins
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.Scheduler
 import java.util.concurrent.atomic.AtomicInteger
 
 object RxIdlingResource : IdlingResource {
 
     private val counter = AtomicInteger(0)
-    private var callback: IdlingResource.ResourceCallback? = null
+    @Volatile private var callback: IdlingResource.ResourceCallback? = null
 
     override fun getName(): String = "RxJava2IdlingResource"
 
@@ -18,60 +17,63 @@ object RxIdlingResource : IdlingResource {
     }
 
     fun register() {
-        RxJavaPlugins.setInitIoSchedulerHandler { wrapScheduler(Schedulers.io()) }
-        RxJavaPlugins.setInitComputationSchedulerHandler { wrapScheduler(Schedulers.computation()) }
-        RxJavaPlugins.setInitNewThreadSchedulerHandler { wrapScheduler(Schedulers.newThread()) }
-        RxJavaPlugins.setInitSingleSchedulerHandler { wrapScheduler(Schedulers.single()) }
+        RxJavaPlugins.setInitIoSchedulerHandler { wrapScheduler(it.createIoScheduler()) }
+        RxJavaPlugins.setInitComputationSchedulerHandler { wrapScheduler(it.createComputationScheduler()) }
+        RxJavaPlugins.setInitNewThreadSchedulerHandler { wrapScheduler(it.createNewThreadScheduler()) }
+        RxJavaPlugins.setInitSingleSchedulerHandler { wrapScheduler(it.createSingleScheduler()) }
+    }
 
-        IdlingRegistry.getInstance().register(this)
+    private fun wrapScheduler(scheduler: Scheduler): Scheduler {
+        return CountingScheduler(scheduler, counter) { callback?.onTransitionToIdle() }
     }
 
     fun unregister() {
+        // Optional: reset handlers if needed
         RxJavaPlugins.reset()
-        IdlingRegistry.getInstance().unregister(this)
     }
+}
 
-    private fun wrapScheduler(scheduler: io.reactivex.Scheduler): io.reactivex.Scheduler {
-        return object : io.reactivex.Scheduler() {
-            override fun createWorker(): Worker {
-                val worker = scheduler.createWorker()
-                return object : Worker() {
-                    override fun schedule(run: Runnable, delay: Long, unit: java.util.concurrent.TimeUnit): Disposable {
-                        increment()
-                        return worker.schedule({
-                            try {
-                                run.run()
-                            } finally {
-                                decrement()
-                            }
-                        }, delay, unit)
-                    }
+import io.reactivex.Scheduler
+import io.reactivex.disposables.Disposable
+import io.reactivex.internal.schedulers.ExecutorScheduler
+import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
-                    override fun dispose() = worker.dispose()
-                    override fun isDisposed() = worker.isDisposed
-                }
-            }
+class CountingScheduler(
+    private val actual: Scheduler,
+    private val counter: AtomicInteger,
+    private val onIdleCallback: () -> Unit
+) : Scheduler() {
 
-            override fun scheduleDirect(run: Runnable, delay: Long, unit: java.util.concurrent.TimeUnit): Disposable {
-                increment()
-                return scheduler.scheduleDirect({
+    override fun createWorker(): Worker {
+        val worker = actual.createWorker()
+        return object : Worker() {
+            override fun schedule(run: Runnable, delay: Long, unit: TimeUnit): Disposable {
+                counter.incrementAndGet()
+                return worker.schedule({
                     try {
                         run.run()
                     } finally {
-                        decrement()
+                        if (counter.decrementAndGet() == 0) onIdleCallback()
                     }
                 }, delay, unit)
             }
+
+            override fun dispose() = worker.dispose()
+
+            override fun isDisposed(): Boolean = worker.isDisposed
         }
     }
 
-    private fun increment() {
+    override fun scheduleDirect(run: Runnable, delay: Long, unit: TimeUnit): Disposable {
         counter.incrementAndGet()
-    }
-
-    private fun decrement() {
-        if (counter.decrementAndGet() == 0) {
-            callback?.onTransitionToIdle()
-        }
+        return actual.scheduleDirect({
+            try {
+                run.run()
+            } finally {
+                if (counter.decrementAndGet() == 0) onIdleCallback()
+            }
+        }, delay, unit)
     }
 }
