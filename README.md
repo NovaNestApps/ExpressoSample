@@ -1,7 +1,3 @@
-Absolutely. Below is the full and expanded documentation for your Espresso-based XML UI Testing Framework, including its architecture, DSL structure, and usage in the NGA module, written in a format ready for Confluence, Markdown, or internal docs.
-
-⸻
-
 📄 Espresso-Based XML UI Testing Framework and NGA Integration
 
 ⸻
