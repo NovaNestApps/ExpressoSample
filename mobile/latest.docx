@@ -213,15 +213,11 @@ rules/	Contains custom rules (like AsyncTaskSchedulerRule)
 	•	All XML UI component tests (accordion, switch, call-to-action) are written using robots and assertions defined in this framework.
 	•	Examples: ComponentListUITest.kt, AccordionComposeTest.kt, etc.
 
-⸻
-
-🏁 Next Steps
-	•	✅ Add Compose-based counterpart (already seen in ButtonComposeTest.kt, AccordionComposeTest.kt)
-	•	🔄 Add CI integration to auto-run these tests
-	•	🔍 Add Allure/HTML test reporting
-
-⸻
-
-Would you like me to export this to PDF, DOCX, or Confluence markdown?
-
-Also, I can generate a Component Usage Diagram or UML structure if needed.
+ui-testing/
+├── espresso/
+│   ├── actions/      → Interactions like click, swipe, scroll
+│   ├── assertions/   → View state verifications
+│   ├── builders/     → Composable matcher builders
+│   ├── matcher/      → Custom matchers (text, tag, drawable)
+│   ├── robots/       → DSL-style UI test abstractions
+│   └── rules/        → Custom test rules (AsyncTaskSchedulerRule)
