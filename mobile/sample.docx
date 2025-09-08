@@ -1,0 +1,76 @@
+
+
+1. Test Entry Point – QASplashScreenActivityTest.kt
+	•	Purpose: End-to-end test that validates login flow from splash to phone number entry.
+	•	Structure:
+	•	Uses JUnit4 with @RunWith(AndroidJUnit4::class)
+	•	@Rule: composeTestRule to test Compose UIs
+	•	@Before setup for IdlingPolicies and registering theme
+	•	@Test function welcome_to_login_happy_path() walks through real user journey
+	•	Reasoning:
+	•	Follows Robot Pattern to separate UI interactions (LoginScreenRobot, WelcomeScreenRobot) from test logic.
+	•	Compose + View-based test rules coexist, which allows hybrid UI testing.
+
+⸻
+
+2. TestHarness.kt and TestLauncherActivity.kt
+	•	Purpose: Dynamically configure the environment for the test: stubbed state, feature flags, theme, etc.
+	•	What it does:
+	•	TestHarness.intent(...): builds a custom Intent using a data class (TestHarness.Config)
+	•	TestLauncherActivity: Receives extras and injects correct test dependencies (via Dagger)
+	•	Why this matters:
+	•	Enables reusable, configurable, and isolated test setup
+	•	Eliminates hardcoded mocks and promotes flexibility for new test scenarios
+
+⸻
+
+3. TestApp.kt
+	•	Purpose: Replace production dependencies with mock implementations
+	•	Highlights:
+	•	Overrides getBrandModule(), getFraudSettings(), getFeatureFlagRepository()
+	•	Uses MockFeatureConfig, TestFraudSettings
+	•	Why this matters:
+	•	Ensures test environment is fully controlled
+	•	No API calls or production dependencies – all mocked using test-safe providers
+
+⸻
+
+4. SplashActivity.kt
+	•	Purpose: Entry point of the app. Test navigates through this using TestLaunchActivity
+	•	Key logic for test:
+	•	Accepts flags like EXTRA_SHOULD_FINISH and EXTRA_NAVIGATION_ENTRY_POINT
+	•	Injects correct component (SplashComponent) for dependency setup
+	•	Use in test:
+	•	Test passes through SplashActivity when launched via TestHarness
+
+⸻
+
+5. Robot Classes – WelcomeScreenRobot.kt, LoginScreenRobot.kt, MIScreenRobot.kt, etc.
+	•	Purpose: Provide readable, declarative, reusable test actions
+	•	Example:
+
+LoginScreenRobot()
+   .isLoginScreenVisible()
+   .enterUsername("admin")
+   .enterPassword("password123")
+   .clickLogin()
+
+
+	•	Benefits:
+	•	Highly readable, looks like a scenario spec
+	•	Reusability: Robots can be used in multiple tests
+	•	Keeps test logic free from view lookups or matchers
+
+⸻
+
+🧠 Why This Architecture?
+
+Feature	Benefit
+TestHarness + Launcher	Full control over app state, decouples tests from production launcher
+TestApp.kt	Dependency Injection swapping without affecting production
+Robot Pattern	Readable, maintainable, test actions reusable across scenarios
+Compose + View Support	Allows hybrid migration toward Compose without rewriting old flows
+Modular Setup	Framework lives in ui-module, reused by nga, lloyds, etc.
+
+
+⸻
