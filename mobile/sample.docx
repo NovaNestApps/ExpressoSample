@@ -73,4 +73,144 @@ Compose + View Support	Allows hybrid migration toward Compose without rewriting 
 Modular Setup	Framework lives in ui-module, reused by nga, lloyds, etc.
 
 
+
+
+🧱 1. Framework Architecture Overview
+
+“Our ui-module test framework is structured with clear separation of concerns into:”
+
+Layer	Purpose
+actions/	Encapsulate user interaction behaviors (clicks, scrolls, typing, etc.)
+assertions/	Wrap standard and custom assertions using matchers
+matchers/	Provide reusable custom matchers (withDrawable, withTextColor, etc.)
+builders/	Fluent DSL-style builders for test matchers
+robots/	High-level page object abstractions to make test steps readable
+tests/	Real UI tests showcasing how the framework is used
+
+
+⸻
+
+📦 2. Actions: ClickActions, ScrollActions, TextActions
+
+“These are reusable wrappers around ViewActions with additional utilities.”
+
+Example:
+
+ClickActions.clickWithId(R.id.button)
+ClickActions.clickChildWithId(R.id.parentView, R.id.childView)
+TextActions.replaceText(R.id.textInput, "Hello", closeKb = true)
+
+Why This?
+	•	Standardizes interaction logic
+	•	Makes custom complex clicks easy to reuse
+	•	Replaces raw onView(...).perform(...) scattered everywhere
+
+⸻
+
+✅ 3. Assertions: BaseAssertions, DefaultAssertions
+
+“Assertion interfaces abstract away raw onView().check() calls.”
+
+Example:
+
+isDisplayed(R.id.button)
+isNotDisplayed(R.id.errorText)
+isChecked(R.id.toggleSwitch)
+hasTag(R.id.view, "important_tag")
+
+Why This?
+	•	Reusable and overrideable (e.g., in brand-specific assertions)
+	•	Easy to mock or log failures
+	•	Reduces boilerplate from all test files
+
+⸻
+
+🔍 4. Matchers: BaseMatchers.kt, WithText.kt, WithDrawable.kt, etc.
+
+“Matchers encapsulate custom logic for checking drawable, color, enabled state, etc.”
+
+Example:
+
+withText("Hello World")
+withDrawable(R.drawable.icon_done)
+withTextColor(R.color.red)
+isEnabled()
+
+Why This?
+	•	Avoid repeating matcher logic across multiple tests
+	•	Enables writing expressive DSL-style assertions
+
+⸻
+
+🧱 5. Builder DSLs: ViewBuilder.kt, RootBuilder.kt
+
+“We introduced builder classes to combine multiple matchers in a readable way.”
+
+Example:
+
+ViewBuilder()
+  .withId(R.id.myView)
+  .withText("Submit")
+  .isEnabled()
+
+Why This?
+	•	Encourages declarative test writing
+	•	Fluent DSLs improve readability, onboarding, and maintenance
+
+⸻
+
+🤖 6. Robots: AccordionRobot, CheckboxRobot, SwitchViewRobot, etc.
+
+“Robots act as high-level page objects for UI components.”
+
+Example:
+
+accordionScreen {
+    clickAccordion()
+    assertAccordionHeaderIsDisplayed("Section 1")
+}
+
+Why This?
+	•	Test code reads like user flows
+	•	Allows defining reusable, branded, or platform-specific test behaviors
+	•	Abstracts UI internals from tests
+
+⸻
+
+🧪 7. Real Tests: ComponentListUITest.kt, AccordionUITest.kt, etc.
+
+“These are example tests that prove our framework is usable, modular, and composable.”
+
+Example:
+
+@Test
+fun test_checkbox_screen_displayed_in_xml() {
+    checkboxScreen {
+        clickCheckboxWithText("Java")
+        assertCheckedWithText("Java")
+        assertCheckboxWithTextIsDisabled("React native")
+    }
+}
+
+Why This?
+	•	Demonstrates how robots + actions + assertions + matchers come together
+	•	Ensures framework is production-ready and reusable
+	•	Acts as documentation for future engineers
+
+⸻
+
+🧠 Final Talking Points for Your Seniors
+
+✅ Why did we build this framework?
+
+“To reduce test duplication, enforce consistency, support modular test development, and provide brand-specific overrides if needed.”
+
+⸻
+
+✅ What benefits have we seen?
+	•	Readable, reusable tests that follow the robot pattern
+	•	Easy to add new components or extend actions/matchers
+	•	Cross-brand reusability (e.g., lloyds, halifax, mbna)
+	•	Faster developer onboarding
+
 ⸻
