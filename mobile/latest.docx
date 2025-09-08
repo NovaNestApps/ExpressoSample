@@ -1,0 +1,227 @@
+Here is a comprehensive Confluence document draft for your Custom Espresso UI Testing Framework implemented in the ui module repo. You can directly paste this into Confluence, and it will render well using standard formatting blocks like headings, tables, and code snippets.
+
+⸻
+
+🧪 Custom Espresso UI Testing Framework — ui-module
+
+📁 Repo Location: vbp-mobile-android/ui-testing
+
+🧱 Purpose: Abstract and modularize reusable test actions, assertions, matchers, builders, and test robots for XML-based UI components in Espresso UI tests. This enables clean, readable, and scalable test cases in downstream modules like nga.
+
+⸻
+
+🔧 Architecture Overview
+
+ui-testing/
+├── espresso/
+│   ├── actions/
+│   ├── assertions/
+│   ├── builders/
+│   ├── matcher/
+│   ├── robots/
+│   └── rules/
+└── test/
+
+Each folder maps to a specific test responsibility, e.g., interaction (actions), verification (assertions), view resolution (matcher), structure (builder), and composition (robots).
+
+⸻
+
+⚙️ 1. Actions (espresso/actions)
+
+These are encapsulated test operations (click, swipe, scroll, type text, etc.) for reuse across screens.
+
+📁 Files:
+	•	Actions.kt → Wrapper around all types of actions
+	•	ClickActions.kt, ScrollActions.kt, TextActions.kt, SwitchActions.kt, etc.
+
+✅ Examples:
+
+Actions.click()                    // Performs a standard click
+Actions.typeText("email@x.com")   // Types text in field
+Actions.setSwitchState(true)      // Toggles a switch to ON
+Actions.clickItemAtPosition(0)    // Clicks first item in RecyclerView
+
+Supports:
+	•	Click, DoubleClick, LongClick
+	•	ScrollToView
+	•	SwipeLeft/Right/Down
+	•	Text typing, replacement
+	•	IME actions
+	•	Soft keyboard close
+	•	Back press
+	•	Switch state toggle
+
+⸻
+
+🔍 2. Matchers (espresso/matcher)
+
+These are custom view matchers for building specific test conditions.
+
+📁 Files:
+	•	BaseMatchers.kt, WithText.kt, WithEnabled.kt, etc.
+	•	ViewBuilder.kt, RootBuilder.kt – builders that compose matchers programmatically.
+
+✅ Examples:
+
+withText("Submit")
+withEnabled()
+withToolbarTitle("Home")
+withPasswordTransformation()
+
+Also supports:
+	•	Matching by tag, regex, ID, enabled/disabled state, hierarchy
+	•	RecyclerView item at position
+	•	Root dialog/window/popup type
+
+⸻
+
+🔒 3. Assertions (espresso/assertions)
+
+Used to validate state of views.
+
+📁 Files:
+	•	BaseAssertions.kt (interface)
+	•	DefaultAssertions.kt (implementation)
+	•	CustomAssertions.kt, LayoutAssertions.kt (special cases)
+
+✅ Examples:
+
+DefaultAssertions.isDisplayed(R.id.buttonSubmit)
+DefaultAssertions.isNotEnabled(withText("Send"))
+DefaultAssertions.hasTag("warning")
+
+Supports:
+	•	isDisplayed / isNotDisplayed (by ID or matcher)
+	•	isCompletelyDisplayed
+	•	isEnabled / isDisabled
+	•	hasTag, doesNotExist, matches(), etc.
+
+⸻
+
+🏗 4. Builders (espresso/builders)
+
+Provides dynamic matchers and root configuration for complex or multiple-view scenarios.
+
+✅ ViewBuilder.kt:
+
+ViewBuilder()
+   .withId(R.id.loginButton)
+   .withText("Login")
+
+✅ RootBuilder.kt:
+
+RootBuilder()
+   .isDialog()
+   .isPlatformPopup()
+
+
+⸻
+
+🤖 5. Robots (espresso/robots)
+
+Implements the robot pattern for clean and expressive DSL-style test scenarios. Each screen/component has its own robot.
+
+📁 Files:
+	•	AccordionViewRobot.kt
+	•	InputFieldViewRobot.kt
+	•	CallToActionViewRobot.kt
+
+✅ Example Usage:
+
+callToActionScreen {
+    clickButton(R.id.primaryButton)
+    assertEnabled(R.id.primaryButton)
+    assertTextDisplayed("Primary button")
+}
+
+Robots encapsulate:
+	•	Clicks on components
+	•	View assertions
+	•	Text typing
+	•	Error validation
+
+⸻
+
+🧪 6. Test DSLs & Entry Points
+
+Tests invoke robot flows using DSL entry functions:
+
+accordionScreen { ... }
+callToActionScreen { ... }
+inputFieldScreen { ... }
+
+Located in:
+
+ComponentListUITest.kt
+ComponentListUITest.kt
+InputFieldViewRobot.kt
+
+Each robot is declared like this:
+
+fun accordionScreen(func: AccordionViewRobot.() -> Unit) = AccordionViewRobot().apply(func)
+
+
+⸻
+
+📌 7. Example: InputFieldViewRobot
+
+fun typeInSearch(text: String) {
+    Actions.replaceText(R.id.searchEditText, text, closeKb = true)
+}
+
+fun assertHintFieldVisible() {
+    DefaultAssertions.isDisplayed(R.id.hintTextCase)
+}
+
+And its usage:
+
+callToInputFieldScreen {
+    assertHintFieldVisible()
+    typeInSearch("Test input")
+}
+
+
+⸻
+
+✅ Benefits of This Framework
+
+Feature	Benefit
+DSL-Style Tests	Clean, expressive, and highly readable
+Reusability	Core actions/assertions usable across modules
+Modular Architecture	Easy to extend (add new matchers, actions, etc.)
+Component-Based Robots	Mirrors UI structure, simplifies testing
+MatchBuilder APIs	Powerful control for root windows, text matchers
+
+
+⸻
+
+📁 Directory Summary
+
+Folder	Purpose
+actions/	Encapsulates test actions
+assertions/	Contains assertions for verifying view states
+matcher/	Contains matchers for locating views
+builders/	Composes matchers dynamically
+robots/	Screen/component-specific test logic
+rules/	Contains custom rules (like AsyncTaskSchedulerRule)
+
+
+⸻
+
+📌 Usage in NGA Module
+	•	The ui test framework is directly consumed in the nga module.
+	•	All XML UI component tests (accordion, switch, call-to-action) are written using robots and assertions defined in this framework.
+	•	Examples: ComponentListUITest.kt, AccordionComposeTest.kt, etc.
+
+⸻
+
+🏁 Next Steps
+	•	✅ Add Compose-based counterpart (already seen in ButtonComposeTest.kt, AccordionComposeTest.kt)
+	•	🔄 Add CI integration to auto-run these tests
+	•	🔍 Add Allure/HTML test reporting
+
+⸻
+
+Would you like me to export this to PDF, DOCX, or Confluence markdown?
+
+Also, I can generate a Component Usage Diagram or UML structure if needed.
