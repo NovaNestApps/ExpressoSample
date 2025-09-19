@@ -1,0 +1,34 @@
+// 1) Flip the feature flags the V3 flow needs
+val flags = listOf(
+    FeatureConfigStatus("isCardManagementHubV3JourneyEnabled", true),
+    FeatureConfigStatus("isCardFreezeEnabled", true),
+    FeatureConfigStatus("isReplaceCardAndPinEnabled", true),
+    // add any others your CardsScreen/VM checks
+)
+
+TestHarness.launch(
+    TestHarness.Config(
+        stub = "success/enrolled",             // must seed at least 1 eligible card
+        switches = emptyList(),
+        flags = flags,
+        themeResId = R.style.LloydsBrandTheme
+    )
+)
+
+// 2) Launch the V3 Fragment directly, hosted by HomeComponent
+val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+
+// Replace with your actual V3 fragment class name:
+val intent = TestLauncherActivity.getFragmentIntent(
+    context     = ctx,
+    fragmentClass = CardManagementHubV3Fragment::class, // e.g. CardsFragment/CardManagementHubV3Fragment
+    args        = bundleOf(),                           // most V3 fragments don't need args
+    themeResId  = R.style.LloydsBrandTheme,
+    hostKind    = "home"                                // IMPORTANT: provides HomeComponent
+)
+
+ActivityScenario.launch<TestLauncherActivity>(intent)
+
+// 3) Assertions (Compose)
+composeTestRule.onNodeWithText("Select").assertExists()
+composeTestRule.onAllNodesWithText("Classic").fetchSemanticsNodes() // card title example
