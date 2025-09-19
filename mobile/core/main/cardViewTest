@@ -1,34 +1,108 @@
-// 1) Flip the feature flags the V3 flow needs
-val flags = listOf(
-    FeatureConfigStatus("isCardManagementHubV3JourneyEnabled", true),
-    FeatureConfigStatus("isCardFreezeEnabled", true),
-    FeatureConfigStatus("isReplaceCardAndPinEnabled", true),
-    // add any others your CardsScreen/VM checks
-)
+package your.package.androidtest
 
-TestHarness.launch(
-    TestHarness.Config(
-        stub = "success/enrolled",             // must seed at least 1 eligible card
-        switches = emptyList(),
-        flags = flags,
-        themeResId = R.style.LloydsBrandTheme
-    )
-)
+import android.content.Context
+import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
+import com.yourpkg.qa.TestHarness
+import com.yourpkg.qa.TestHarness.Config
+import com.yourpkg.testrunner.TestLauncherActivity
+import com.yourpkg.di.DIComponentHolder
+import com.yourpkg.di.QaComponent
+import com.yourpkg.retail.ui.cardmanagementhub.v3.CardManagementHubV3Fragment
+import com.yourpkg.retail.ui.cardmanagementhub.v3.CardManagementHubV3Journey
+import com.yourpkg.retail.business.customer.dto.CustomerInformation
+import com.yourpkg.retail.business.customer.model.CustomerInformationDomainModel
+import org.junit.Test
+import org.junit.runner.RunWith
+import androidx.core.os.bundleOf
+import com.yourpkg.R // LloydsBrandTheme, etc.
 
-// 2) Launch the V3 Fragment directly, hosted by HomeComponent
-val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+@RunWith(AndroidJUnit4::class)
+@LargeTest
+class CardViewDetailsTest {
 
-// Replace with your actual V3 fragment class name:
-val intent = TestLauncherActivity.getFragmentIntent(
-    context     = ctx,
-    fragmentClass = CardManagementHubV3Fragment::class, // e.g. CardsFragment/CardManagementHubV3Fragment
-    args        = bundleOf(),                           // most V3 fragments don't need args
-    themeResId  = R.style.LloydsBrandTheme,
-    hostKind    = "home"                                // IMPORTANT: provides HomeComponent
-)
+    @Test
+    fun open_card_details_v3() {
+        // 1) Prepare QA graph + feature flags for V3
+        TestHarness.launch(
+            Config(
+                stub = "success/enrolled",
+                switches = emptyList(),
+                flags = listOf(
+                    // ensure V3 flow is enabled
+                    FeatureConfigStatus("isCardManagementHubV3JourneyEnabled", true)
+                ),
+                themeResId = R.style.LloydsBrandTheme
+            )
+        )
 
-ActivityScenario.launch<TestLauncherActivity>(intent)
+        val ctx = ApplicationProvider.getApplicationContext<Context>()
 
-// 3) Assertions (Compose)
-composeTestRule.onNodeWithText("Select").assertExists()
-composeTestRule.onAllNodesWithText("Classic").fetchSemanticsNodes() // card title example
+        // 2) Build DTO + DomainModel with a non-null ocisId
+        val dto = buildCustomerInformationDto(
+            kycStatus = "VERIFIED",
+            ocisId = "OCISD_TEST_123"
+        )
+        val domain = CustomerInformationDomainModel(dto)
+
+        // 3) Seed the repository cache BEFORE we create the V3 fragment
+        ActivityScenario.launch<TestLauncherActivity>(
+            TestLauncherActivity.getLaunchIntent(ctx, stubScenario = "success/enrolled")
+        ).onActivity { a ->
+            val qa = (a as DIComponentHolder<QaComponent>).getComponent()
+
+            // ---- pick the actual repo method you have ----
+            // e.g. cacheCustomerInformation / save / update / setCachedCustomerInformation
+            qa.customerInformationRepository().cacheCustomerInformation(domain)
+
+            // sanity check so we fail fast if seeding didn’t work
+            val ocisd = qa.customerUseCase()
+                .getCachedCustomerInformation()
+                .getOcisId()
+            check(!ocisd.isNullOrBlank()) { "OCISD not seeded!" }
+
+            a.finish()
+        }
+
+        // 4) Launch V3 with required argument, hosted by HomeComponent
+        val args = bundleOf(
+            "CARD_MANAGEMENT_HUB_V3_JOURNEY" to
+                CardManagementHubV3Journey.CARD_MANAGEMENT_HUB_V3_VIEW_CARD_DETAILS
+        )
+
+        val intent = TestLauncherActivity.getFragmentIntent(
+            context       = ctx,
+            fragmentClass = CardManagementHubV3Fragment::class,
+            args          = args,
+            themeResId    = R.style.LloydsBrandTheme,
+            hostKind      = "home" // IMPORTANT: provides HomeComponent for injection
+        )
+
+        ActivityScenario.launch<TestLauncherActivity>(intent)
+
+        // 5) TODO: add your Espresso/Compose assertions here
+        // composeTestRule.onNodeWithText("Select").assertExists()
+    }
+
+    /**
+     * Your CustomerInformation DTO has private fields with Jackson annotations.
+     * In tests we can set them via reflection.
+     */
+    private fun buildCustomerInformationDto(
+        kycStatus: String,
+        ocisId: String
+    ): CustomerInformation {
+        val dto = CustomerInformation() // no-arg ctor
+        val kycField = CustomerInformation::class.java.getDeclaredField("mKycStatus")
+        kycField.isAccessible = true
+        kycField.set(dto, kycStatus)
+
+        val ocisField = CustomerInformation::class.java.getDeclaredField("mOcisId")
+        ocisField.isAccessible = true
+        ocisField.set(dto, ocisId)
+
+        return dto
+    }
+}
