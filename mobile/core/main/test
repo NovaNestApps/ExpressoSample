@@ -1,0 +1,13 @@
+override fun initializeAppComponent(apiConfig: ApiConfig?, environmentProperties: EnvironmentProperties?) {
+        val params = GalaxyApiModuleParams.Builder()
+            .setApiConfig(apiConfig ?: ApiConfig())
+            .build()
+
+        // IMPORTANT: use the Test root component (defined in Step 4)
+        appComponent = DaggerTestRootComponent.builder()
+            .brandModule(getBrandModule())     // same modules as prod…
+            .galaxyApiModuleParams(params)     // …plus whatever your prod root needs
+            .build()
+
+        IdlingRegistry.getInstance().register(AppIdling.nav) // optional
+    }
