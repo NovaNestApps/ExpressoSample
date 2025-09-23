@@ -206,4 +206,8 @@ fun user_can_expand_accordion() {
 
 
 ⸻
-
+Create MyComponentViewRobot.kt under robots/view.
+	•	Add actions (clickXxx, typeXxx) using Actions.
+	•	Add assertions (assertXxx) using DefaultAssertions.
+	•	Provide a DSL entrypoint: fun myComponentScreen(block: …).
+	•	Write a test in ComponentListUITest.kt or a new test file.
