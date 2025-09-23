@@ -1,7 +1,4 @@
-Got it 👍 You want a README tailored for your ui-testing framework module and how teams should use it for component testing inside the ui module (Accordion, AlertDialog, Toggle, Checkbox, etc.).
-Here’s a complete draft you can drop into your repo as README.md:
 
-⸻
 
 UI Testing Framework (Espresso + Robot Pattern)
 
@@ -210,4 +207,3 @@ fun user_can_expand_accordion() {
 
 ⸻
 
-👉 Would you like me to also create a second README focused only on “How to add a new component robot” (step-by-step recipe), so any dev joining can extend this framework easily?
