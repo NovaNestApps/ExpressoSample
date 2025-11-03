@@ -1,8 +1,4 @@
-📄 Espresso-Based XML UI Testing Framework and NGA Integration
-
-⸻
-
-🔹 1. Overview
+📄 Espresso-Based XML UI Testing Framework 
 
 This custom UI test framework is built on top of Espresso (with limited Compose support for mixed flows) to provide a modular, scalable, and DSL-style approach to UI testing in Android.
 
